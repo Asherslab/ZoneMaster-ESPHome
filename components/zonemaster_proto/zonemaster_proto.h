@@ -43,11 +43,11 @@ class ZonemasterProto : public Component, public uart::UARTDevice {
     }
 
     // Optional periodic polling
-    const uint32_t now = millis();
-    if (this->poll_interval_ms_ > 0 && now - this->last_poll_ms_ >= this->poll_interval_ms_) {
-      this->send_request_(this->device_id_);
-      this->last_poll_ms_ = now;
-    }
+    // const uint32_t now = millis();
+    // if (this->poll_interval_ms_ > 0 && now - this->last_poll_ms_ >= this->poll_interval_ms_) {
+    //   this->send_request_(this->device_id_);
+    //   this->last_poll_ms_ = now;
+    // }
   }
 
  protected:
