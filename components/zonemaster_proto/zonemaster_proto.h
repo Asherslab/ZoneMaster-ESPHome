@@ -33,8 +33,10 @@ class ZonemasterProto : public Component, public uart::UARTDevice {
   }
 
   void loop() override {
+    ESP_LOGI(TAG, "TESTING 1");
     // Read incoming UART bytes into buffer
     while (this->available()) {
+      ESP_LOGI(TAG, "TESTING 2");
       uint8_t b;
       if (!this->read_byte(&b)) break;
       buf_.push_back(b);
