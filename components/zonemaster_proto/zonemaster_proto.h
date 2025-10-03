@@ -35,7 +35,6 @@ class ZonemasterProto : public Component, public uart::UARTDevice {
   void loop() override {
     // Read incoming UART bytes into buffer
     while (this->available()) {
-      ESP_LOGI(TAG, "TESTING 2");
       uint8_t b;
       if (!this->read_byte(&b)) break;
       buf_.push_back(b);
@@ -100,7 +99,7 @@ class ZonemasterProto : public Component, public uart::UARTDevice {
 
       //ESP_LOGI(TAG, "Size: %X", fr.size());
       if (fr.size() < 9) continue;
-      //ESP_LOGI(TAG, "RX: %02X %02X %02X %02X %02X %02X %02X %02X %02X", fr[0], fr[1], fr[2], fr[3], fr[4], fr[5], fr[6], fr[7], fr[8]);
+      ESP_LOGI(TAG, "RX: %02X %02X %02X %02X %02X %02X %02X %02X %02X", fr[0], fr[1], fr[2], fr[3], fr[4], fr[5], fr[6], fr[7], fr[8]);
 
       // Identify response: AA 30 00 ID 81 01 DATA CRC 55
       const bool looks_response = (fr[0] == 0xAA && fr[1] == 0x30 && fr[2] == 0x00 && fr.back() == 0x55);
