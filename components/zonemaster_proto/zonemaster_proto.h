@@ -99,7 +99,6 @@ class ZonemasterProto : public Component, public uart::UARTDevice {
 
       //ESP_LOGI(TAG, "Size: %X", fr.size());
       if (fr.size() < 9) continue;
-      ESP_LOGI(TAG, "RX: %02X %02X %02X %02X %02X %02X %02X %02X %02X", fr[0], fr[1], fr[2], fr[3], fr[4], fr[5], fr[6], fr[7], fr[8]);
 
       // Identify response: AA 30 00 ID 81 01 DATA CRC 55
       const bool looks_response = (fr[0] == 0xAA && fr[1] == 0x30 && fr[2] == 0x00 && fr.back() == 0x55);
@@ -119,6 +118,15 @@ class ZonemasterProto : public Component, public uart::UARTDevice {
       if (crc_rx != crc_calc) {
         ESP_LOGW(TAG, "CRC mismatch (exp=%02X got=%02X), dropping", crc_calc, crc_rx);
         continue;
+      }
+
+      if (looks_request)
+      {
+        ESP_LOGI(TAG, "TX: %02X %02X %02X %02X %02X %02X %02X %02X %02X", fr[0], fr[1], fr[2], fr[3], fr[4], fr[5], fr[6], fr[7], fr[8]);
+      }
+      if (looks_response)
+      {
+        ESP_LOGI(TAG, "RX: %02X %02X %02X %02X %02X %02X %02X %02X %02X", fr[0], fr[1], fr[2], fr[3], fr[4], fr[5], fr[6], fr[7], fr[8]);
       }
      
       if (looks_response) {
