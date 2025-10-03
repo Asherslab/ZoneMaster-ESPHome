@@ -128,6 +128,7 @@ class ZonemasterProto : public Component, public uart::UARTDevice {
           ESP_LOGV(TAG, "Response for other ID 0x%02X (=0x%02X), ignoring", id, this->device_id_);
           continue;
         }
+        ESP_LOGV(TAG, "RX: %02X %02X %02X %02X %02X %02X %02X %02X %02X", fr[0], fr[1], fr[2], fr[3], fr[4], fr[5], fr[6], fr[7], fr[8]);
         this->publish_buttons_(data);
       } else {
         // Valid request seen on bus (optional to log/debug)
