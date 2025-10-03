@@ -104,6 +104,8 @@ class ZonemasterProto : public Component, public uart::UARTDevice {
       const bool looks_response = (fr[0] == 0xAA && fr[1] == 0x30 && fr[2] == 0x00 && fr.back() == 0x55);
       const bool looks_request  = (fr[0] == 0xAA && fr[1] == 0x00 && fr[2] == 0x30 && fr.back() == 0x55);
 
+      ESP_LOGV(TAG, "TEST: %02X %02X %02X %02X %02X %02X %02X %02X %02X [%d, %d]", fr[0], fr[1], fr[2], fr[3], fr[4], fr[5], fr[6], fr[7], fr[8], looks_request, looks_response)
+     
       if (!(looks_response || looks_request)) {
         ESP_LOGV(TAG, "Skipped frame (unknown sig): len=%u", (unsigned)fr.size());
         continue;
