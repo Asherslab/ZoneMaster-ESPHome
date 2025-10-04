@@ -107,7 +107,7 @@ class ZonemasterProto : public Component, public uart::UARTDevice {
 
       ESP_LOGV(TAG, "TEST: %02X %02X %02X %02X %02X %02X %02X %02X %02X [%d, %d]", fr[0], fr[1], fr[2], fr[3], fr[4], fr[5], fr[6], fr[7], fr[8], is_req, is_rsp);
      
-      if (!(looks_response || looks_request)) {
+      if (!(is_rsp || is_req)) {
         ESP_LOGV(TAG, "Skipped frame (unknown sig): len=%u", (unsigned)fr.size());
         continue;
       }
@@ -123,11 +123,11 @@ class ZonemasterProto : public Component, public uart::UARTDevice {
         continue;
       }
 
-      if (looks_request)
+      if (is_req)
       {
         ESP_LOGI(TAG, "TX: %02X %02X %02X %02X %02X %02X %02X %02X %02X", fr[0], fr[1], fr[2], fr[3], fr[4], fr[5], fr[6], fr[7], fr[8]);
       }
-      if (looks_response)
+      if (is_rsp)
       {
         ESP_LOGI(TAG, "RX: %02X %02X %02X %02X %02X %02X %02X %02X %02X", fr[0], fr[1], fr[2], fr[3], fr[4], fr[5], fr[6], fr[7], fr[8]);
       }
