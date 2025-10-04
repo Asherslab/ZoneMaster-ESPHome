@@ -65,6 +65,8 @@ class Zonemaster : public Component, public uart::UARTDevice {
    msg.push_back(crc);
    msg.push_back(0x55);
  
+   last_req_id_ = id;
+
    this->write_array(msg);
    ESP_LOGI(TAG, "Sent button state: ID=0x%02X DATA=0x%02X CRC=0x%02X", id, data, crc);
   }
