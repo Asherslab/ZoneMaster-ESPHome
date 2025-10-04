@@ -59,8 +59,11 @@ class Zonemaster : public Component, public uart::UARTDevice {
    if (b4) data |= 0x08;
    if (b5) data |= 0x10;
    if (b6) data |= 0x20;
+
+   if (!last_req_id_.has_value())
+    last_req_id_ = 0xAA;
  
-   std::vector<uint8_t> msg = {0xAA, 0x00, 0x30, last_req_id_, 0x01, 0x00, data};
+   std::vector<uint8_t> msg = {0xAA, 0x00, 0x30, last_req_id_.value(), 0x01, 0x00, data};
    uint8_t crc = crc8_maxim_(&msg[1], msg.size() - 1); // exclude AA
    
    msg.push_back(crc);
@@ -69,7 +72,7 @@ class Zonemaster : public Component, public uart::UARTDevice {
    last_req_ms_ = millis();
 
    this->write_array(msg);
-   ESP_LOGI(TAG, "Sent button state: ID=0x%02X DATA=0x%02X CRC=0x%02X", last_req_id_, data, crc);
+   ESP_LOGI(TAG, "Sent button state: ID=0x%02X DATA=0x%02X CRC=0x%02X", last_req_id_.value(), data, crc);
   }
 
  protected:
