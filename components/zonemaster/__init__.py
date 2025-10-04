@@ -9,8 +9,8 @@ from esphome.components import uart, binary_sensor
 DEPENDENCIES = ["uart"]
 AUTO_LOAD = ["binary_sensor"]
 
-zonemaster_proto_ns = cg.esphome_ns.namespace("zonemaster_proto")
-ZonemasterProto = zonemaster_proto_ns.class_("ZonemasterProto", cg.Component, uart.UARTDevice)
+zonemaster_ns = cg.esphome_ns.namespace("zonemaster")
+Zonemaster = zonemaster_ns.class_("Zonemaster", cg.Component, uart.UARTDevice)
 
 CONF_RESPONSE_WINDOW = "response_window"
 CONF_ACCEPT_ANY_RESPONSE = "accept_any_response"
@@ -26,7 +26,7 @@ CONF_BUTTON_6 = "button_6"
 CONFIG_SCHEMA = (
     cv.Schema(
         {
-            cv.GenerateID(): cv.declare_id(ZonemasterProto),
+            cv.GenerateID(): cv.declare_id(Zonemaster),
             cv.GenerateID(CONF_UART_ID): cv.use_id(uart.UARTComponent),
             
             # If True, publish every valid response (CRC OK) regardless of a prior request.

@@ -7,13 +7,13 @@
 #include <algorithm>
 
 namespace esphome {
-namespace zonemaster_proto {
+namespace zonemaster {
 
-static const char *const TAG = "zonemaster_proto";
+static const char *const TAG = "zonemaster";
 
-class ZonemasterProto : public Component, public uart::UARTDevice {
+class Zonemaster : public Component, public uart::UARTDevice {
  public:
-  ZonemasterProto() = default;
+  Zonemaster() = default;
 
   // Config
   void set_accept_any_response(bool v) { this->accept_any_response_ = v; }
@@ -207,5 +207,5 @@ class ZonemasterProto : public Component, public uart::UARTDevice {
   uint32_t response_window_ms_{150};
 };
 
-}  // namespace zonemaster_proto
+}  // namespace zonemaster
 }  // namespace esphome

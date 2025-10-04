@@ -1,6 +1,6 @@
-#include "zonemaster_proto.h"
+#include "zonemaster.h"
 namespace esphome {
-namespace zonemaster_proto {
+namespace zonemaster {
 // All logic is in the header (header-only style for simplicity).
 }  // namespace zonemaster_proto
 }  // namespace esphome
