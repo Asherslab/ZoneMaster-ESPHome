@@ -12,8 +12,8 @@ AUTO_LOAD = ["binary_sensor"]
 zonemaster_proto_ns = cg.esphome_ns.namespace("zonemaster_proto")
 ZonemasterProto = zonemaster_proto_ns.class_("ZonemasterProto", cg.Component, uart.UARTDevice)
 
-CONF_DEVICE_ID = "device_id"
-CONF_POLL_INTERVAL = "poll_interval"
+CONF_RESPONSE_WINDOW = "response_window"
+CONF_ACCEPT_ANY_RESPONSE = "accept_any_response"
 
 # Button keys (bit 0..5 => button_1..button_6)
 CONF_BUTTON_1 = "button_1"
@@ -28,8 +28,14 @@ CONFIG_SCHEMA = (
         {
             cv.GenerateID(): cv.declare_id(ZonemasterProto),
             cv.GenerateID(CONF_UART_ID): cv.use_id(uart.UARTComponent),
-            cv.Optional(CONF_DEVICE_ID, default=0xB1): cv.uint8_t,
-            cv.Optional(CONF_POLL_INTERVAL, default="500ms"): cv.positive_time_period_milliseconds,
+            
+            # If True, publish every valid response (CRC OK) regardless of a prior request.
+            # If False (default), require response ID to match the last seen request ID within the window.
+            cv.Optional(CONF_ACCEPT_ANY_RESPONSE, default=False): cv.boolean,
+
+            # Max time between the last seen request and its matching response (default 150ms)
+            cv.Optional(CONF_RESPONSE_WINDOW, default="150ms"): cv.positive_time_period_milliseconds,
+            
             cv.Optional(CONF_BUTTON_1): binary_sensor.binary_sensor_schema(),
             cv.Optional(CONF_BUTTON_2): binary_sensor.binary_sensor_schema(),
             cv.Optional(CONF_BUTTON_3): binary_sensor.binary_sensor_schema(),
