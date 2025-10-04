@@ -51,7 +51,7 @@ class Zonemaster : public Component, public uart::UARTDevice {
     // }
   }
 
-  void send_button_state(uint8_t id, bool b1, bool b2, bool b3, bool b4, bool b5, bool b6) {
+  void send_button_state(bool b1, bool b2, bool b3, bool b4, bool b5, bool b6) {
    uint8_t data = 0;
    if (b1) data |= 0x01;
    if (b2) data |= 0x02;
@@ -60,17 +60,16 @@ class Zonemaster : public Component, public uart::UARTDevice {
    if (b5) data |= 0x10;
    if (b6) data |= 0x20;
  
-   std::vector<uint8_t> msg = {0xAA, 0x00, 0x30, id, 0x01, 0x00, data};
+   std::vector<uint8_t> msg = {0xAA, 0x00, 0x30, last_req_id_, 0x01, 0x00, data};
    uint8_t crc = crc8_maxim_(&msg[1], msg.size() - 1); // exclude AA
    
    msg.push_back(crc);
    msg.push_back(0x55);
 
    last_req_ms_ = millis();
-   last_req_id_ = id;
 
    this->write_array(msg);
-   ESP_LOGI(TAG, "Sent button state: ID=0x%02X DATA=0x%02X CRC=0x%02X", id, data, crc);
+   ESP_LOGI(TAG, "Sent button state: ID=0x%02X DATA=0x%02X CRC=0x%02X", last_req_id_, data, crc);
   }
 
  protected:
