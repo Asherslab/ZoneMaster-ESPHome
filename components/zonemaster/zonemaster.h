@@ -51,6 +51,24 @@ class Zonemaster : public Component, public uart::UARTDevice {
     // }
   }
 
+  void send_button_state(uint8_t id, bool b1, bool b2, bool b3, bool b4, bool b5, bool b6) {
+   uint8_t data = 0;
+   if (b1) data |= 0x01;
+   if (b2) data |= 0x02;
+   if (b3) data |= 0x04;
+   if (b4) data |= 0x08;
+   if (b5) data |= 0x10;
+   if (b6) data |= 0x20;
+ 
+   std::vector<uint8_t> msg = {0xAA, 0x00, 0x30, id, 0x01, 0x00, data};
+   uint8_t crc = crc8_maxim_(&msg[1], msg.size() - 1); // exclude AA
+   msg.push_back(crc);
+   msg.push_back(0x55);
+ 
+   this->write_array(msg);
+   ESP_LOGI(TAG, "Sent button state: ID=0x%02X DATA=0x%02X CRC=0x%02X", id, data, crc);
+  }
+
  protected:
   // ==== CRC-8 Dallas/Maxim helpers ====
   static inline uint8_t reflect8_(uint8_t x) {
@@ -72,34 +90,6 @@ class Zonemaster : public Component, public uart::UARTDevice {
     }
     crc = reflect8_(crc);              // RefOut
     return crc;                        // xorout=0x00
-  }
-
-  void send_request_(uint8_t id) {
-    // Request format: AA 00 30 <ID> 01 00 00 <CRC> 55
-    std::vector<uint8_t> msg {0xAA, 0x00, 0x30, id, 0x01, 0x00, 0x00};
-    uint8_t crc = crc8_maxim_(&msg[1], msg.size() - 1);  // exclude leading AA
-    msg.push_back(crc);
-    msg.push_back(0x55);
-    this->write_array(msg);
-    ESP_LOGV(TAG, "TX %uB: AA 00 30 %02X 01 00 00 %02X 55", (unsigned) msg.size(), id, crc);
-  }
-
-  void send_button_state(uint8_t id, bool b1, bool b2, bool b3, bool b4, bool b5, bool b6) {
-   uint8_t data = 0;
-   if (b1) data |= 0x01;
-   if (b2) data |= 0x02;
-   if (b3) data |= 0x04;
-   if (b4) data |= 0x08;
-   if (b5) data |= 0x10;
-   if (b6) data |= 0x20;
- 
-   std::vector<uint8_t> msg = {0xAA, 0x00, 0x30, id, 0x01, 0x00, data};
-   uint8_t crc = crc8_maxim_(&msg[1], msg.size() - 1); // exclude AA
-   msg.push_back(crc);
-   msg.push_back(0x55);
- 
-   this->write_array(msg);
-   ESP_LOGI(TAG, "Sent button state: ID=0x%02X DATA=0x%02X CRC=0x%02X", id, data, crc);
   }
 
   void extract_and_process_frames_() {
