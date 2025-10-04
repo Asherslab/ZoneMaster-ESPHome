@@ -53,8 +53,8 @@ async def to_code(config):
     await cg.register_component(var, config)
     await uart.register_uart_device(var, config)
 
-    cg.add(var.set_device_id(config[CONF_DEVICE_ID]))
-    cg.add(var.set_poll_interval(config[CONF_POLL_INTERVAL]))
+    cg.add(var.set_accept_any_response(config[CONF_ACCEPT_ANY_RESPONSE]))
+    cg.add(var.set_response_window(config[CONF_RESPONSE_WINDOW]))
 
     # Attach binary sensors if configured
     for idx, key in enumerate(
