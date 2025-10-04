@@ -16,8 +16,8 @@ class ZonemasterProto : public Component, public uart::UARTDevice {
   ZonemasterProto() = default;
 
   // Config
-  void set_device_id(uint8_t id) { this->device_id_ = id; }
-  void set_poll_interval(uint32_t ms) { this->poll_interval_ms_ = ms; }
+  void set_accept_any_response(bool v) { this->accept_any_response_ = v; }
+  void set_response_window(uint32_t ms) { this->response_window_ms_ = ms; }
 
   // Sensors
   void set_button1(binary_sensor::BinarySensor *s) { this->btn_[0] = s; }
@@ -28,8 +28,9 @@ class ZonemasterProto : public Component, public uart::UARTDevice {
   void set_button6(binary_sensor::BinarySensor *s) { this->btn_[5] = s; }
 
   void setup() override {
-    ESP_LOGI(TAG, "ZonemasterProto setup: device_id=0x%02X, poll_interval=%u ms", this->device_id_, this->poll_interval_ms_);
-    this->last_poll_ms_ = 0;
+    ESP_LOGI(TAG, "RX-only; accept_any_response=%s, response_window=%ums",
+             accept_any_response_ ? "true" : "false",
+             response_window_ms_);
   }
 
   void loop() override {
@@ -38,7 +39,7 @@ class ZonemasterProto : public Component, public uart::UARTDevice {
       uint8_t b;
       if (!this->read_byte(&b)) break;
       buf_.push_back(b);
-      if (buf_.size() > 512) buf_.erase(buf_.begin(), buf_.end() - 256);
+      if (buf_.size() > 1024) buf_.erase(buf_.begin(), buf_.end() - 512);
       this->extract_and_process_frames_();
     }
 
@@ -101,10 +102,10 @@ class ZonemasterProto : public Component, public uart::UARTDevice {
       if (fr.size() < 9) continue;
 
       // Identify response: AA 30 00 ID 81 01 DATA CRC 55
-      const bool looks_response = (fr[0] == 0xAA && fr[1] != 0x00 && fr[2] == 0x00 && fr.back() == 0x55);
-      const bool looks_request  = (fr[0] == 0xAA && fr[1] == 0x00 && fr[2] != 0x00 && fr.back() == 0x55);
+      const bool is_rsp = (fr[0] == 0xAA && fr[1] != 0x00 && fr[2] == 0x00 && fr.back() == 0x55);
+      const bool is_req  = (fr[0] == 0xAA && fr[1] == 0x00 && fr[2] != 0x00 && fr.back() == 0x55);
 
-      ESP_LOGV(TAG, "TEST: %02X %02X %02X %02X %02X %02X %02X %02X %02X [%d, %d]", fr[0], fr[1], fr[2], fr[3], fr[4], fr[5], fr[6], fr[7], fr[8], looks_request, looks_response);
+      ESP_LOGV(TAG, "TEST: %02X %02X %02X %02X %02X %02X %02X %02X %02X [%d, %d]", fr[0], fr[1], fr[2], fr[3], fr[4], fr[5], fr[6], fr[7], fr[8], is_req, is_rsp);
      
       if (!(looks_response || looks_request)) {
         ESP_LOGV(TAG, "Skipped frame (unknown sig): len=%u", (unsigned)fr.size());
@@ -131,19 +132,36 @@ class ZonemasterProto : public Component, public uart::UARTDevice {
         ESP_LOGI(TAG, "RX: %02X %02X %02X %02X %02X %02X %02X %02X %02X", fr[0], fr[1], fr[2], fr[3], fr[4], fr[5], fr[6], fr[7], fr[8]);
       }
      
-      if (looks_response) {
-        if (fr.size() < 9) continue;
+      if (is_req) {
+        // Request format: AA 00 30 ID 01 00 00 CRC 55
+        const uint8_t id = fr[3];
+        last_req_id_   = id;
+        last_req_ms_   = millis();
+        ESP_LOGV(TAG, "REQ OK id=0x%02X", id);
+      } else if (is_rsp) {
+        // Response format: AA 30 00 ID 81 01 DATA CRC 55
         const uint8_t id   = fr[3];
         const uint8_t data = fr[6];
-        if (id != this->device_id_) {
-          // If you want to accept any device, comment this out.
-          ESP_LOGV(TAG, "Response for other ID 0x%02X (=0x%02X), ignoring", id, this->device_id_);
-          continue;
+
+        if (accept_any_response_) {
+          publish_buttons_(data);
+          ESP_LOGV(TAG, "RSP OK (any) id=0x%02X data=0x%02X", id, data);
+        } else {
+          const uint32_t now = millis();
+          const bool id_matches   = (last_req_id_.has_value() && id == last_req_id_.value());
+          const bool within_window = (last_req_id_.has_value() && (now - last_req_ms_) <= response_window_ms_);
+          if (id_matches && within_window) {
+            publish_buttons_(data);
+            ESP_LOGV(TAG, "RSP OK matched id=0x%02X data=0x%02X", id, data);
+          } else {
+            ESP_LOGV(TAG, "RSP ignored id=0x%02X (last_req=%s, window=%s)",
+                     id,
+                     last_req_id_.has_value() ? "set" : "unset",
+                     last_req_id_.has_value() ? ((now - last_req_ms_) <= response_window_ms_ ? "OK" : "expired") : "n/a");
+          }
         }
-        this->publish_buttons_(data);
       } else {
-        // Valid request seen on bus (optional to log/debug)
-        ESP_LOGV(TAG, "REQ OK len=%u", (unsigned)fr.size());
+        ESP_LOGV(TAG, "Unknown frame sig, len=%u", (unsigned) fr.size());
       }
     }
   }
@@ -161,9 +179,14 @@ class ZonemasterProto : public Component, public uart::UARTDevice {
   // State
   std::vector<uint8_t> buf_;
   binary_sensor::BinarySensor *btn_[6] {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
-  uint8_t  device_id_{0xB1};
-  uint32_t poll_interval_ms_{500};
-  uint32_t last_poll_ms_{0};
+
+  // Request tracking (rolling ID observed on the bus)
+  optional<uint8_t> last_req_id_{};
+  uint32_t last_req_ms_{0};
+
+  // Config flags
+  bool     accept_any_response_{false};
+  uint32_t response_window_ms_{150};
 };
 
 }  // namespace zonemaster_proto
