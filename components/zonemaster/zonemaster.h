@@ -64,7 +64,7 @@ class Zonemaster : public Component, public uart::UARTDevice {
     last_req_id_ = 0xAA;
    else
    {
-    last_req_id_ += 1;
+    last_req_id_ = last_req_id_.value() + 1;
    }
  
    std::vector<uint8_t> msg = {0xAA, 0x00, 0x30, last_req_id_.value(), 0x01, 0x00, data};
